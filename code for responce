@@ -1,0 +1,43 @@
+import pandas as pd
+import os  
+csv_path = 'e:/mes.py.csv'
+ 
+ 
+if os.path.exists(csv_path): 
+    df = pd.read_csv(csv_path, header=None, names=['user_message', 'response'], encoding='ISO-8859-1')
+else:
+    df = pd.DataFrame(columns=['user_message', 'response'])
+ 
+ 
+df['user_message'] = df['user_message'].astype(str).str.lower().str.strip()
+df['response'] = df['response'].astype(str).str.strip()
+ 
+def get_response(user_message):
+    user_message = user_message.lower().strip()
+    for _, row in df.iterrows():
+        if row['user_message'] in user_message:
+            return row['response']
+    return None
+ 
+def add_to_csv(new_message, new_response):     
+    global df                                 
+    df = pd.concat([df, pd.DataFrame([[new_message, new_response]], columns=['user_message', 'response'])], ignore_index=True)
+    df.to_csv(csv_path, index=False, header=False, encoding='ISO-8859-1')
+ 
+ 
+ 
+while True:
+    user_input = input("You:")
+    if user_input.lower().strip() in ['bye', 'exit']:
+        print("ChatBot: Goodbye! Chat with you later!")
+        break
+ 
+    response = get_response(user_input)
+   
+    if response:
+        print("ChatBot:", response)
+    else:
+        print("ChatBot: I don't know how to respond to that.")
+        new_response = input("You : ")
+        add_to_csv(user_input.lower().strip(), new_response)
+        print("ChatBot: Got it! I'll remember that.")
