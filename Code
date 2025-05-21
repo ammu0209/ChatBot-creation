@@ -1,0 +1,57 @@
+import csv   # For reading/writing CSV
+import pandas as pd  # For working with dataframes
+import os  # To check if the file exists
+ 
+# Set the path to your CSV file
+csv_path = "c:/Users/KNOT/Desktop/chatbot_csv_project/responses2.csv"   # Keep it in the same folder
+
+# Load the CSV (or create it if it doesn't exist)
+if os.path.exists(csv_path):   # Check if file exists
+    df = pd.read_csv(csv_path, header=None, names=['category', 'user_message', 'response'], encoding='utf-8')   # Read the CSV
+else:
+    df = pd.DataFrame(columns=['category', 'user_message', 'response'])   # Create new DataFrame
+
+# Normalize data: remove whitespace, lowercase where needed
+df['category'] = df['category'].astype(str).str.lower().str.strip()  # Normalize category
+df['user_message'] = df['user_message'].astype(str).str.lower().str.strip()  # Normalize user_message
+df['response'] = df['response'].astype(str).str.strip()   # Normalize response
+
+# Function to find response
+def get_response(user_message):    # Check if the user message is in the dataframe
+    user_message = user_message.lower().strip()     # Convert the user message to lower case and remove spaces
+    for _, row in df.iterrows():    # Iterate through the dataframe
+        if row['user_message'] in user_message:    # Check if the user message is in the dataframe
+            return row['response'], row['category']    # Return the response and category
+    return None, None
+
+# Function to add a new message/response pair with category
+def add_to_csv(category, new_message, new_response):   # Add new data to the CSV file
+    global df
+    df = pd.concat(
+        [df, pd.DataFrame([[category, new_message, new_response]], columns=['category', 'user_message', 'response'])],   # Add the new data to the dataframe
+        ignore_index=True       # Ignore the index
+    ) 
+    df.to_csv(csv_path, index=False, header=False, encoding='utf-8')  # Append new data without header
+
+# Chat loop
+print("ChatBot is ready! (Type 'bye' or 'exit' to stop)")   # Print the message
+# Start the loop
+while True:
+    user_input = input("You: ")
+
+    if user_input.lower().strip() in ['bye', 'exit']:  # Check if the user input is 'bye' or 'exit'
+        # If yes, then exit the loop
+        print("ChatBot: Goodbye! Chat with you later!")
+        break
+
+    response, category = get_response(user_input)  # Get the response from the dataframe
+
+    if response:
+        print(f"ChatBot ({category.title()}): {response}")   # If response is found, print it
+    else:
+        print("ChatBot: I don't know how to respond to that.")   # If no response is found
+        new_response = input("You (teach me): ")   # Take the new response from the user
+        category = input("What category does this belong to? ").lower().strip()    # Ask for category
+        add_to_csv(category, user_input.lower().strip(), new_response)  # Add the new data to the CSV file
+        print("ChatBot: Got it! I'll remember that.")  # Print the message
+        print(f"Added to CSV: [{category}] '{user_input.lower().strip()}' → '{new_response}'")    # Print the new data that is added to the CSV file
